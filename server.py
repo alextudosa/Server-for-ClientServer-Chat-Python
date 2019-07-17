@@ -39,6 +39,19 @@ while True:
                         connection.send(y.encode())
                     file2.close()
                     connection.send("#$\n".encode())
+                else:
+                    #case client sent message
+                    print('mesaj', 'nu Connect')
+                    file3 = open(pathToFile, "a+")
+                    file3.write("Client: " + data.decode('utf-8') + "\n")
+                    file3.write("Server: " + data.decode('utf-8') + "\n")
+                    file3.close()
+                file2 = open(pathToFile, "r+")
+                f2 = file2.readlines()
+                for y in f2:
+                    print(y)
+                    connection.send(y.encode())
+                file2.close()
 
             elif not data:
                 break
