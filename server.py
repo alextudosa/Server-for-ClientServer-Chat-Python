@@ -16,6 +16,34 @@ if not os.path.exists(dirName):
     os.mkdir(dirName)
     print("Directory ", dirName, "created")
 
+file3 = open(pathToFile, "a+")
+file2 = open(pathToFile, "r+")
 
+
+while True:
+    connection, server_addr = sock.accept()
+    try:
+        while True:
+
+            print('Connected: ', connection)
+            data = connection.recv(1024)
+            print(data.decode('utf-8'))
+            if data:
+                if data.decode('utf-8') == "#$":
+                    # case client just want to connect
+                    print('Mmodal', "Momsa")
+                    file2 = open(pathToFile, "r+")
+                    f2 = file2.readlines()
+                    for y in f2:
+                        print(y)
+                        connection.send(y.encode())
+                    file2.close()
+                    connection.send("#$\n".encode())
+
+            elif not data:
+                break
+
+    finally:
+        connection.close()
 
 
