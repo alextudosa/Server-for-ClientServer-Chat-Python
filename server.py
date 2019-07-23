@@ -9,19 +9,21 @@ sock.bind(server_addr)
 sock.listen(1)
 
 
-user1 = 'alex'
-password1 = 'pass1'
-user2 = 'vali'
-password2 = 'pass2'
+
 goodCredentialsOrNot = 0
 
 dirName = '/home/alex/PycharmProjects/chatDir'
 fileName = 'chatConversation.txt'
+credentialsFileName = 'credentials.txt'
 pathToFile = dirName + '/' + fileName
+pathToCredentialsFile = dirName + '/' + credentialsFileName
 
 if not os.path.exists(dirName):
     os.mkdir(dirName)
     print("Directory ", dirName, "created")
+
+cfile1 = open(pathToCredentialsFile, "a+")
+cfile2 = open(pathToCredentialsFile, "r+")
 
 file3 = open(pathToFile, "a+")
 file2 = open(pathToFile, "r+")
@@ -32,20 +34,25 @@ while True:
     try:
         while True:
             clientIp = connection.getpeername()[0]
-
             print('Connected: ', connection)
+            print('IP: ', clientIp)
             data = connection.recv(1024)
-            print(data.decode('utf-8'))
+            # print(data.decode('utf-8'))
             if data:
 
-                myData = data.decode()
-                c = myData.split(", ")
-                if c.__contains__(user1) and c.__contains__(password1):
-                    userConnected = user1
-                elif c.__contains__(user2) and c.__contains__(password2):
-                    userConnected = user2
-                else:
-                    userConnected = 'NoAccount'
+                myData = data.decode('utf-8')
+                print(myData.split(", "))
+                userNameRCV, passRCV, messageRCV = myData.split(", ")
+                cfile2 = open(pathToCredentialsFile, "r+")
+                readFromCFile = cfile2.readlines()
+                for z in readFromCFile:
+                    usernameDB, passwordDB = z.split(", ")
+                    if (userNameRCV == usernameDB) and (passRCV == passwordDB.rstrip()):
+                        userConnected = usernameDB
+                        break
+                    else:
+                        userConnected = 'NoAccount'
+                cfile2.close()
 
 
                 if myData.split(", ")[2] == "#$" and userConnected != 'NoAccount':
