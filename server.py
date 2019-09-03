@@ -3,7 +3,7 @@ from socket import AF_INET, SOCK_STREAM, SO_REUSEADDR, SOL_SOCKET, SHUT_RDWR
 import sys
 import os
 import ssl
-
+import os.path
 # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #
 # server_addr = ('0.0.0.0', 8080)
@@ -37,10 +37,10 @@ bindsocket.listen(5)
 goodCredentialsOrNot = 0
 
 dirName = '/home/alex/PycharmProjects/chatDir'
-fileName = 'chatConversation.txt'
+# fileName = 'chatConversation.txt'
 credentialsFileName = 'credentials.txt'
 isTyping = "isTyping.txt"
-pathToFile = dirName + '/' + fileName
+# pathToFile = dirName + '/' + fileName
 pathToCredentialsFile = dirName + '/' + credentialsFileName
 pathToIsTyping = dirName + '/' + isTyping
 
@@ -51,13 +51,11 @@ if not os.path.exists(dirName):
 cfile1 = open(pathToCredentialsFile, "a+")
 cfile2 = open(pathToCredentialsFile, "r+")
 
-file3 = open(pathToFile, "a+")
-file2 = open(pathToFile, "r+")
+
 
 tfile1 = open(pathToIsTyping, "a+")
 tfile2 = open(pathToIsTyping, "r+")
 
-# print('Created file: ', pathToCredentialsFile)
 
 while True:
     newsocket, fromaddr = bindsocket.accept()
@@ -75,7 +73,7 @@ while True:
 
                 myData = data.decode('utf-8')
                 print(myData.split(", "))
-                userNameRCV, passRCV, protocol, messageRCV = myData.split(", ")
+                userNameRCV, passRCV, protocol, talkTo, messageRCV = myData.split(", ")
                 cfile2 = open(pathToCredentialsFile, "r+")
                 readFromCFile = cfile2.readlines()
                 for z in readFromCFile:
@@ -85,10 +83,38 @@ while True:
                         break
                     else:
                         userConnected = 'NoAccount'
+                for y in readFromCFile:
+                        usernameDB1, passwordDB1 = y.split(", ")
+                        if talkTo in "":
+                            talkingTo = "NoUserToTalk"
+                        elif talkTo in usernameDB1:
+                            talkingTo = usernameDB1
+                            break;
+                        else:
+                            talkingTo = "NoUserToTalk"
+                if userConnected == talkingTo:
+                    talkingTo = "CannotTalkToYourself"
                 cfile2.close()
 
 
-                if myData.split(", ")[2] == "connect" and userConnected != 'NoAccount':
+                if userConnected not in "NoAccount" and talkingTo not in "NoUserToTalk" \
+                        and talkingTo not in "CannotTalkToYourself":
+                    fileName = userConnected + "_" + talkingTo + ".txt"
+                    pathToFile1 = dirName + '/' + fileName
+                    fileName1 = talkingTo + "_" + userConnected + ".txt"
+                    pathToFile2 = dirName + '/' + fileName1
+                    if os.path.exists(pathToFile1):
+                        pathToFile = pathToFile1
+                    elif os.path.exists(pathToFile2):
+                        pathToFile = pathToFile2
+                    else:
+                        pathToFile = pathToFile1
+                    file3 = open(pathToFile, "a+")
+                    file2 = open(pathToFile, "r+")
+                    file3.close()
+                    file2.close()
+
+                if myData.split(", ")[2] == "connect" and userConnected != 'NoAccount' and talkingTo != "NoUserToTalk" and talkingTo not in "CannotTalkToYourself":
                     # case client just want to connect
 
                     file2 = open(pathToFile, "r+")
@@ -97,21 +123,15 @@ while True:
                         print(y)
                         conn.send(y.encode())
                     file2.close()
-                    # conn.send((myData.split(", ")[2] + '\n').encode())
-                    print("IS TYPING ESTE ", isTyping)
                     tfile2 = open(pathToIsTyping, "r+")
                     tf2 = tfile2.readlines()
                     for v in tf2:
-                        print(v)
                         if "0" not in v:
-                            print("Am ajuns in TYPE")
-                            conn.send(v.encode())
-                            conn.send(("refresh\n").encode())
+                            conn.send(("connect\n").encode())
                         else:
                             conn.send((myData.split(", ")[2] + "\n").encode())
-                            print("Am TRIMIS ---", myData.split(", ")[2])
                     tfile2.close()
-                elif myData.split(", ")[2] == "refresh" and userConnected != 'NoAccount':
+                elif myData.split(", ")[2] == "refresh" and userConnected != 'NoAccount' and talkingTo != "NoUserToTalk" and talkingTo not in "CannotTalkToYourself":
                     # case refresh conversation
                     file2 = open(pathToFile, "r+")
                     f2 = file2.readlines()
@@ -119,25 +139,23 @@ while True:
                         print(y)
                         conn.send(y.encode())
                     file2.close()
-                    print("Am ajuns in refresh")
                     tfile2 = open(pathToIsTyping, "r+")
                     tf2 = tfile2.readlines()
                     for v in tf2:
                         print(v)
                         if '0' not in v:
-                            print("Am ajuns in TYPE")
                             conn.send(v.encode())
                             conn.send((myData.split(", ")[2] + "\n").encode())
                         else:
                             conn.send((myData.split(", ")[2] + "\n").encode())
-                            print("AM TRIMIS: ---", myData.split(", ")[2])
                     tfile2.close()
                 elif userConnected != 'NoAccount' and myData.split(", ")[2] != "connect" \
                         and myData.split(", ")[2] != "typing" and myData.split(", ")[2] != 'not typing' \
-                        and myData.split(", ")[2] != "refresh" and myData.split(", ")[2] == "new message":
+                        and myData.split(", ")[2] != "refresh" and myData.split(", ")[2] == "new message" \
+                        and talkingTo != "NoUserToTalk" and talkingTo not in "CannotTalkToYourself":
                     #case client sent message
                     file3 = open(pathToFile, "a+")
-                    messageToWriteInFile = "Client-" + userConnected + ": " + myData.split(", ")[3]
+                    messageToWriteInFile = "Client-" + userConnected + ": " + messageRCV
                     file3.write(messageToWriteInFile + "\n")
                     file3.close()
                     file2 = open(pathToFile, "r+")
@@ -149,7 +167,11 @@ while True:
                     conn.send((myData.split(", ")[2] + "\n").encode())
                 elif userConnected == 'NoAccount':
                     conn.send((userConnected + "\n").encode())
-                elif myData.split(", ")[2] == "typing" and userConnected != 'NoAccount':
+                elif talkingTo == "NoUserToTalk":
+                    conn.send(("No user to talk to!\n").encode())
+                elif talkingTo == "CannotTalkToYourself":
+                    conn.send(("Cannot Talk To Yourself!\n").encode())
+                elif myData.split(", ")[2] == "typing" and userConnected != 'NoAccount' and talkingTo != "NoUserToTalk" and talkingTo not in "CannotTalkToYourself":
                     whoIsTyping = myData.split(", ")[2]
 
                     # print(myData.split(", ")[2])
@@ -163,9 +185,7 @@ while True:
                     tfile1 = open(pathToIsTyping, "w+")
                     tfile1.write(userConnected + " is typing...\n")
                     tfile1.close()
-                    print("AM ajuns in TYPING")
-                elif myData.split(", ")[2] == 'not typing' and userConnected != 'NoAccount':
-                    print("AM AJUNS IN STOPpED TYPING")
+                elif myData.split(", ")[2] == 'not typing' and userConnected != 'NoAccount' and talkingTo != "NoUserToTalk":
                     file2 = open(pathToFile, "r+")
                     f2 = file2.readlines()
                     for y in f2:
